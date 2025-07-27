@@ -1,26 +1,474 @@
-@import "tailwindcss";
+/* Google Fonts 임포트 */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@100;200;300;400;500;600;700;800;900&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@100;200;300;400;500;600;700;800;900&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@300;400;500;600;700&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* 웹폰트 추가 */
+@font-face {
+    font-family: 'Cafe24ClassicType-Regular';
+    src: url('https://fastly.jsdelivr.net/gh/projectnoonnu/noonfonts_2210-2@1.0/Cafe24ClassicType-Regular.woff2') format('woff2'),
+         url('https://cdn.jsdelivr.net/gh/projectnoonnu/noonfonts_2210-2@1.0/Cafe24ClassicType-Regular.woff2') format('woff2');
+    font-weight: normal;
+    font-style: normal;
+    font-display: swap;
+}
+
+/* Custom font override for titles */
+.font-cafe24-important {
+  font-family: 'Cafe24ClassicType-Regular', 'Noto Serif KR', serif !important;
+}
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --foreground-rgb: 0, 0, 0;
+  --background-start-rgb: 214, 219, 220;
+  --background-end-rgb: 255, 255, 255;
+
+  /* Color Palette - 첨부 이미지 스타일 */
+  --charcoal: #2B2B2B;        /* 진한 텍스트 */
+  
+  /* 메인 팔레트 */
+  --sand: #F5F1EB;            /* 메인 배경 (연한 베이지) */
+  --cream: #FAF7F2;           /* 가장 연한 배경 */
+  --latte: #E8DDD4;           /* 중간 베이지 */
+  --mocha: #D4C4B0;           /* 진한 베이지 */
+  
+  /* 악센트 컬러 */
+  --sage: #A8B5A0;            /* 부드러운 그린 (포인트) */
+  --terracotta: #C67B5C;      /* 따뜻한 테라코타 (버튼) */
+  --warm: #B8A082;            /* 따뜻한 브라운 */
+  
+  /* 기본 컬러 */
+  --white: #FFFFFF;
+  --black: #000000;
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+* {
+  scroll-behavior: smooth;
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  color: rgb(var(--charcoal));
+  background: var(--white);
+  overflow-x: hidden;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  color: var(--charcoal);
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+
+p, a, span, li, button {
+  font-family: 'Roboto', sans-serif;
+  color: var(--charcoal);
+}
+
+/* Custom animations */
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fadeInUp {
+  animation: fadeInUp 0.6s ease-out forwards;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes float {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
+}
+
+@keyframes floatDelayed {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-15px);
+  }
+}
+
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}
+
+@keyframes shimmer {
+  0% {
+    background-position: -200px 0;
+  }
+  100% {
+    background-position: calc(200px + 100%) 0;
+  }
+}
+
+@keyframes slideInLeft {
+  from {
+    opacity: 0;
+    transform: translateX(-50px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes slideInRight {
+  from {
+    opacity: 0;
+    transform: translateX(50px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes scaleIn {
+  from {
+    opacity: 0;
+    transform: scale(0.9);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+/* Custom utility classes */
+.animate-fadeInUp {
+  animation: fadeInUp 0.8s ease-out forwards;
+}
+
+.animate-fadeIn {
+  animation: fadeIn 0.6s ease-out forwards;
+}
+
+.animate-float {
+  animation: float 3s ease-in-out infinite;
+}
+
+.animate-float-delayed {
+  animation: floatDelayed 3s ease-in-out infinite 1.5s;
+}
+
+.animate-pulse-slow {
+  animation: pulse 2s ease-in-out infinite;
+}
+
+.animate-shimmer {
+  background: linear-gradient(
+    90deg,
+    rgba(255, 255, 255, 0) 0%,
+    rgba(255, 255, 255, 0.4) 50%,
+    rgba(255, 255, 255, 0) 100%
+  );
+  background-size: 200px 100%;
+  animation: shimmer 1.5s infinite;
+}
+
+.animate-slideInLeft {
+  animation: slideInLeft 0.8s ease-out forwards;
+}
+
+.animate-slideInRight {
+  animation: slideInRight 0.8s ease-out forwards;
+}
+
+.animate-scaleIn {
+  animation: scaleIn 0.6s ease-out forwards;
+}
+
+/* Custom gradients - 새로운 베이지 팔레트 */
+.bg-gradient-luxury {
+  background: linear-gradient(135deg, var(--cream) 0%, var(--sand) 50%, var(--latte) 100%);
+}
+
+.bg-gradient-warm {
+  background: linear-gradient(135deg, var(--sand) 0%, var(--latte) 50%, var(--mocha) 100%);
+}
+
+.bg-gradient-charcoal {
+  background: linear-gradient(135deg, var(--charcoal) 0%, #2C3E50 50%, #34495E 100%);
+}
+
+/* Glass morphism effect */
+.glass {
+  background: rgba(255, 255, 255, 0.25);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+}
+
+.glass-dark {
+  background: rgba(54, 69, 79, 0.25);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+}
+
+/* Text effects - 새로운 베이지 팔레트 */
+.text-gradient-warm {
+  background: linear-gradient(135deg, var(--sage) 0%, var(--terracotta) 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.text-shadow-soft {
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.text-shadow-medium {
+  text-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+}
+
+/* Hover effects - 녹색 계열로 업데이트 */
+.hover-lift {
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.hover-lift:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+}
+
+.hover-glow {
+  transition: box-shadow 0.3s ease;
+}
+
+.hover-glow:hover {
+  box-shadow: 0 0 20px rgba(168, 181, 160, 0.3);
+}
+
+/* Custom scrollbar - 새로운 베이지 팔레트 */
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--sand);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--sage);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--terracotta);
+}
+
+/* Selection - 새로운 베이지 팔레트 */
+::selection {
+  background: var(--sage);
+  color: var(--white);
+}
+
+::-moz-selection {
+  background: var(--sage);
+  color: var(--white);
+}
+
+/* Focus styles - 새로운 베이지 팔레트 */
+.focus-sage:focus {
+  outline: 2px solid var(--sage);
+  outline-offset: 2px;
+}
+
+/* Button variants - 녹색 계열로 업데이트 */
+.btn-primary {
+  @apply px-8 py-4 bg-terracotta text-white font-semibold rounded-full transition-all duration-300 hover:bg-warm hover:shadow-xl hover:scale-105;
+}
+
+.btn-secondary {
+  @apply px-8 py-4 bg-white/80 backdrop-blur-sm text-charcoal font-semibold rounded-full border-2 border-charcoal/20 hover:border-sage transition-all duration-300 hover:bg-white hover:shadow-lg;
+}
+
+.btn-ghost {
+  @apply px-6 py-3 text-charcoal font-medium transition-all duration-300 hover:text-sage hover:bg-sage/5 rounded-lg;
+}
+
+/* Card variants */
+.card-elevated {
+  @apply bg-white/80 backdrop-blur-sm rounded-xl border border-charcoal/10 shadow-lg hover:shadow-xl transition-all duration-300;
+}
+
+.card-luxury {
+  @apply bg-gradient-to-br from-white/20 to-charcoal/5 backdrop-blur-sm rounded-2xl border border-white/30 shadow-2xl;
+}
+
+/* Layout helpers */
+.container-custom {
+  @apply max-w-7xl mx-auto px-4 lg:px-8;
+}
+
+.section-padding {
+  @apply py-24 md:py-32;
+}
+
+.section-padding-small {
+  @apply py-16 md:py-20;
+}
+
+/* Responsive typography */
+.heading-hero {
+  @apply text-4xl md:text-5xl lg:text-6xl xl:text-7xl font-bold text-charcoal leading-tight;
+}
+
+.heading-section {
+  @apply text-3xl md:text-4xl lg:text-5xl font-bold text-charcoal leading-tight;
+}
+
+.heading-card {
+  @apply text-xl md:text-2xl font-bold text-charcoal;
+}
+
+.text-body-large {
+  @apply text-lg md:text-xl text-charcoal/70 leading-relaxed;
+}
+
+.text-body {
+  @apply text-base md:text-lg text-charcoal/70 leading-relaxed;
+}
+
+/* Spacing utilities */
+.space-section {
+  @apply space-y-16 md:space-y-20 lg:space-y-24;
+}
+
+.space-content {
+  @apply space-y-8 md:space-y-10;
+}
+
+.space-small {
+  @apply space-y-4 md:space-y-6;
+}
+
+@layer utilities {
+  .text-balance {
+    text-wrap: balance;
+  }
+  
+  /* Additional color utilities - 새로운 베이지 팔레트 */
+  .text-charcoal {
+    color: var(--charcoal);
+  }
+  
+  .text-sage {
+    color: var(--sage);
+  }
+  
+  .text-terracotta {
+    color: var(--terracotta);
+  }
+  
+  .text-warm {
+    color: var(--warm);
+  }
+  
+  .text-sand {
+    color: var(--sand);
+  }
+  
+  .bg-charcoal {
+    background-color: var(--charcoal);
+  }
+  
+  .bg-sage {
+    background-color: var(--sage);
+  }
+  
+  .bg-terracotta {
+    background-color: var(--terracotta);
+  }
+  
+  .bg-warm {
+    background-color: var(--warm);
+  }
+  
+  .bg-sand {
+    background-color: var(--sand);
+  }
+  
+  .bg-cream {
+    background-color: var(--cream);
+  }
+  
+  .bg-latte {
+    background-color: var(--latte);
+  }
+  
+  .bg-mocha {
+    background-color: var(--mocha);
+  }
+  
+  .border-charcoal {
+    border-color: var(--charcoal);
+  }
+  
+  .border-sage {
+    border-color: var(--sage);
+  }
+  
+  .border-terracotta {
+    border-color: var(--terracotta);
+  }
+  
+  .border-warm {
+    border-color: var(--warm);
+  }
+  
+  .border-sand {
+    border-color: var(--sand);
+  }
+}
+
+/* Print styles */
+@media print {
+  * {
+    -webkit-print-color-adjust: exact !important;
+    color-adjust: exact !important;
+  }
+}
+
+/* High contrast mode support - 새로운 베이지 팔레트 */
+@media (prefers-contrast: high) {
+  :root {
+    --charcoal: #000000;
+    --sage: #6B7F6B;
+  }
+}
+
+/* Reduced motion support */
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
 }

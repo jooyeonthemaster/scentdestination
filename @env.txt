@@ -1,0 +1,27 @@
+# Firebase Configuration
+NEXT_PUBLIC_FIREBASE_API_KEY=AIzaSyB7UP0uQ5xm98ldGHuqy0LmCVb4IvoBNLQ
+NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN=scentsestination.firebaseapp.com
+NEXT_PUBLIC_FIREBASE_PROJECT_ID=scentsestination
+NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET=scentsestination.firebasestorage.app
+NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=84653715046
+NEXT_PUBLIC_FIREBASE_APP_ID=1:84653715046:web:61c38a202c6b360b6fc7a7
+NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID=G-F595RBTXXC
+
+# Gemini AI API Configuration
+GEMINI_API_KEY=AIzaSyBEqshv6mM5BqHVC-YXPrndTCjc5AajZ3k
+# 사용량 한도 모니터링: https://aistudio.google.com/app/apikey
+# Gemini 2.0 Flash 일일 한도: 50 requests (무료 계정)
+# 토큰 제한: 최대 32K input, 8K output tokens
+
+# Toss Payments V1 API Configuration
+NEXT_PUBLIC_TOSS_PAYMENTS_CLIENT_KEY=test_ck_Poxy1XQL8R1O0KP5q7YLr7nO5Wml
+TOSS_PAYMENTS_SECRET_KEY=test_sk_nRQoOaPz8LDvXDvRolYm8y47BMw6
+TOSS_PAYMENTS_SECURITY_KEY=2756b5cbab34aaa5e3e25982c2e3a69207802f7b746ccb02c31ee229be8b0563
+
+# Next.js Configuration
+NEXT_PUBLIC_APP_URL=http://localhost:3000
+
+# Development Environment
+NODE_ENV=development
+
+ 
