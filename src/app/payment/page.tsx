@@ -1,26 +1,26 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import PaymentWidget from '@/components/payment/PaymentWidget';
 
-interface PaymentInfo {
+interface ProductData {
   type: string;
   productId: string;
   name: string;
-  price: number;
-  quantity: number;
+  price: string;
+  quantity: string;
   size?: string;
   placeId?: string;
   placeName?: string;
 }
 
-export default function PaymentPage() {
+function PaymentContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { user, isAuthenticated } = useAuth();
-  const [paymentInfo, setPaymentInfo] = useState<PaymentInfo | null>(null);
+  const [productData, setProductData] = useState<ProductData | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -30,7 +30,7 @@ export default function PaymentPage() {
       return;
     }
 
-    // URL 파라미터에서 결제 정보 추출
+    // URL 파라미터에서 상품 정보 추출
     const type = searchParams.get('type');
     const productId = searchParams.get('productId');
     const name = searchParams.get('name');
@@ -40,28 +40,25 @@ export default function PaymentPage() {
     const placeId = searchParams.get('placeId');
     const placeName = searchParams.get('placeName');
 
-    if (!type || !productId || !name || !price) {
-      alert('결제 정보가 올바르지 않습니다.');
+    if (!type || !productId || !name || !price || !quantity) {
       router.push('/');
       return;
     }
 
-    const info: PaymentInfo = {
+    setProductData({
       type,
       productId,
       name,
-      price: parseInt(price),
-      quantity: parseInt(quantity || '1'),
+      price,
+      quantity,
       size: size || undefined,
       placeId: placeId || undefined,
       placeName: placeName || undefined
-    };
-
-    setPaymentInfo(info);
+    });
     setLoading(false);
   }, [searchParams, isAuthenticated, router]);
 
-  if (loading || !paymentInfo) {
+  if (loading || !productData) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-cream">
         <div className="text-center">
@@ -96,25 +93,25 @@ export default function PaymentPage() {
               <div className="flex justify-between items-start">
                 <div className="flex-1">
                   <h3 className="font-medium text-charcoal mb-1">
-                    {paymentInfo.name}
+                    {productData.name}
                   </h3>
-                  {paymentInfo.size && (
+                  {productData.size && (
                     <p className="text-sm text-charcoal/60">
-                      사이즈: {paymentInfo.size}
+                      사이즈: {productData.size}
                     </p>
                   )}
-                  {paymentInfo.placeName && (
+                  {productData.placeName && (
                     <p className="text-sm text-charcoal/60">
-                      향기 공간: {paymentInfo.placeName}
+                      향기 공간: {productData.placeName}
                     </p>
                   )}
                 </div>
                 <div className="text-right">
                   <p className="text-lg font-semibold text-charcoal">
-                    {paymentInfo.price.toLocaleString()}원
+                    {parseInt(productData.price).toLocaleString()}원
                   </p>
                   <p className="text-sm text-charcoal/60">
-                    수량: {paymentInfo.quantity}개
+                    수량: {parseInt(productData.quantity)}개
                   </p>
                 </div>
               </div>
@@ -125,7 +122,7 @@ export default function PaymentPage() {
                     총 결제 금액
                   </span>
                   <span className="text-2xl font-bold text-sage">
-                    {(paymentInfo.price * paymentInfo.quantity).toLocaleString()}원
+                    {(parseInt(productData.price) * parseInt(productData.quantity)).toLocaleString()}원
                   </span>
                 </div>
               </div>
@@ -154,7 +151,16 @@ export default function PaymentPage() {
             </h2>
             
             <PaymentWidget 
-              paymentInfo={paymentInfo}
+              paymentInfo={{
+                type: productData.type,
+                productId: productData.productId,
+                name: productData.name,
+                price: parseInt(productData.price),
+                quantity: parseInt(productData.quantity),
+                size: productData.size,
+                placeId: productData.placeId,
+                placeName: productData.placeName
+              }}
               customerEmail={user?.email || ''}
               customerName={user?.displayName || '익명'}
             />
@@ -185,5 +191,13 @@ export default function PaymentPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function PaymentPage() {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <PaymentContent />
+    </Suspense>
   );
 } 

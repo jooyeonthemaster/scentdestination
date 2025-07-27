@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 
@@ -13,26 +13,30 @@ interface PaymentResult {
   customerEmail: string;
 }
 
-export default function PaymentSuccessPage() {
+function PaymentSuccessContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { user } = useAuth();
+  const { user, isAuthenticated } = useAuth();
   const [paymentResult, setPaymentResult] = useState<PaymentResult | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    if (!isAuthenticated) {
+      router.push('/auth/login');
+      return;
+    }
+
+    const paymentKeyParam = searchParams.get('paymentKey');
+    const orderIdParam = searchParams.get('orderId');
+    const amountParam = searchParams.get('amount');
+
+    if (!paymentKeyParam || !orderIdParam || !amountParam) {
+      router.push('/payment/fail?message=결제 정보가 올바르지 않습니다');
+      return;
+    }
+
     const processPayment = async () => {
-      const paymentKey = searchParams.get('paymentKey');
-      const orderId = searchParams.get('orderId');
-      const amount = searchParams.get('amount');
-
-      if (!paymentKey || !orderId || !amount) {
-        setError('결제 정보가 올바르지 않습니다.');
-        setLoading(false);
-        return;
-      }
-
       try {
         // 결제 승인 API 호출
         const response = await fetch('/api/payments/confirm', {
@@ -41,9 +45,9 @@ export default function PaymentSuccessPage() {
             'Content-Type': 'application/json',
           },
           body: JSON.stringify({
-            paymentKey,
-            orderId,
-            amount: parseInt(amount),
+            paymentKey: paymentKeyParam,
+            orderId: orderIdParam,
+            amount: parseInt(amountParam),
           }),
         });
 
@@ -63,7 +67,7 @@ export default function PaymentSuccessPage() {
     };
 
     processPayment();
-  }, [searchParams]);
+  }, [searchParams, isAuthenticated, router]);
 
   const handleGoHome = () => {
     router.push('/');
@@ -205,5 +209,13 @@ export default function PaymentSuccessPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function PaymentSuccessPage() {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <PaymentSuccessContent />
+    </Suspense>
   );
 } 
