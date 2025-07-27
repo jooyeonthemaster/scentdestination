@@ -68,9 +68,9 @@ export default function DiffuserPurchase({ place, enhancedData, compact = false 
       type: 'diffuser',
       productId: diffuserProduct.id,
       name: diffuserProduct.name,
-      price: selectedSizeInfo?.price || 0,
-      quantity: quantity,
-      size: selectedSizeInfo?.volume,
+      price: (selectedSizeInfo?.price || 0).toString(),
+      quantity: quantity.toString(),
+      size: selectedSizeInfo?.volume || '',
       placeId: place.id,
       placeName: place.name
     };
