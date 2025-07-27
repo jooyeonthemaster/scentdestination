@@ -49,7 +49,7 @@ const Footer = () => {
               <li><Link href="/scent-map" className="text-cream/70 hover:text-sage transition-colors duration-300 font-inter text-sm">향기 지도</Link></li>
               <li><Link href="/scent-spaces" className="text-cream/70 hover:text-sage transition-colors duration-300 font-inter text-sm">향기 공간</Link></li>
               <li><Link href="/ai-scent-recommendation" className="text-cream/70 hover:text-sage transition-colors duration-300 font-inter text-sm">AI 향수 추천</Link></li>
-              <li><Link href="/scent-journey" className="text-cream/70 hover:text-sage transition-colors duration-300 font-inter text-sm">향기 여행</Link></li>
+              <li><Link href="/scent-spaces" className="text-cream/70 hover:text-sage transition-colors duration-300 font-inter text-sm">향기 여행</Link></li>
             </ul>
           </div>
 

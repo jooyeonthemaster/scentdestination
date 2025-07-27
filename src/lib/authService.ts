@@ -6,7 +6,9 @@ import {
   updateProfile,
   sendPasswordResetEmail,
   User,
-  UserCredential
+  UserCredential,
+  signInWithRedirect,
+  getRedirectResult
 } from 'firebase/auth';
 import { doc, setDoc, getDoc } from 'firebase/firestore';
 import { auth, googleProvider, db } from './firebase';
@@ -36,17 +38,27 @@ export interface SignInData {
   password: string;
 }
 
-// 구글 로그인
-export const signInWithGoogle = async (): Promise<UserCredential> => {
+// Google로 로그인
+export const signInWithGoogle = async (): Promise<void> => {
   try {
-    const result = await signInWithPopup(auth, googleProvider);
-    
-    // 사용자 프로필을 Firestore에 저장
-    await saveUserProfile(result.user);
-    
-    return result;
+    await signInWithRedirect(auth, googleProvider);
   } catch (error: any) {
     console.error('구글 로그인 실패:', error);
+    throw new Error(getAuthErrorMessage(error.code));
+  }
+};
+
+// Google 리다이렉트 결과 처리
+export const handleGoogleRedirectResult = async (): Promise<UserCredential | null> => {
+  try {
+    const result = await getRedirectResult(auth);
+    if (result) {
+      // 사용자 프로필을 Firestore에 저장
+      await saveUserProfile(result.user);
+    }
+    return result;
+  } catch (error: any) {
+    console.error('구글 리다이렉트 결과 처리 실패:', error);
     throw new Error(getAuthErrorMessage(error.code));
   }
 };

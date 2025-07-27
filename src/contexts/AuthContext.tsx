@@ -5,6 +5,7 @@ import { User, onAuthStateChanged } from 'firebase/auth';
 import { auth } from '@/lib/firebase';
 import { 
   signInWithGoogle, 
+  handleGoogleRedirectResult,
   signInWithEmail, 
   signUpWithEmail, 
   logout,
@@ -41,7 +42,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   // 인증 상태 변화 감지
   useEffect(() => {
-    console.log('🔐 AuthContext: 인증 상태 리스너 등록');
+    console.log('🔐 AuthContext: 인증 상태 모니터링 시작');
+    
+    // Google 리다이렉트 결과 처리
+    const handleRedirectResult = async () => {
+      try {
+        await handleGoogleRedirectResult();
+      } catch (error: any) {
+        console.warn('Google 리다이렉트 결과 처리 중 오류:', error);
+      }
+    };
+    
+    handleRedirectResult();
     
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
       console.log('🔐 AuthContext: 인증 상태 변화 감지', user ? '로그인됨' : '로그아웃됨');
