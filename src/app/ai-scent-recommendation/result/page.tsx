@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { SCENT_COLLECTIONS } from '@/data/scents';
@@ -50,7 +50,7 @@ function isAdvancedRecommendation(rec: AIRecommendation): rec is AdvancedAIRecom
   return 'analysisMetadata' in rec && 'userAnalysis' in rec && 'spaceAnalysis' in rec;
 }
 
-export default function AiScentRecommendationResultPage() {
+function AiScentRecommendationResultContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [recommendation, setRecommendation] = useState<AIRecommendation | null>(null);
@@ -564,5 +564,13 @@ function LegacyResultDisplay({
         </div>
       </div>
     </div>
+  );
+}
+
+export default function AiScentRecommendationResultPage() {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <AiScentRecommendationResultContent />
+    </Suspense>
   );
 }
