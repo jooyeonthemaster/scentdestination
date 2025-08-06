@@ -68,22 +68,22 @@ function AiScentRecommendationResultContent() {
 
     // sessionStorage에서 추천 결과 가져오기
     const storedResult = sessionStorage.getItem(`ai_recommendation_${analysisId}`);
+    console.log('🔍 세션 스토리지에서 가져온 데이터:', storedResult);
+    
     if (storedResult) {
       const parsedResult = JSON.parse(storedResult);
-      const recData = parsedResult.recommendation;
+      console.log('📋 파싱된 결과:', parsedResult);
+      
+      // 중첩된 구조 처리: recommendation.recommendation이 실제 데이터
+      const recData = parsedResult.recommendation.recommendation;
+      console.log('🎯 실제 추천 데이터:', recData);
+      
       setRecommendation(recData);
       
-      // 데이터 구조에 따라 첫 번째 향기 설정
-      if (isAdvancedRecommendation(recData)) {
-        // 고도화된 구조
-        if (recData.recommendedScents && recData.recommendedScents.length > 0) {
-          setSelectedScent(recData.recommendedScents[0]);
-        }
-      } else {
-        // 기존 구조
-        if (recData.recommendedScents && recData.recommendedScents.length > 0) {
-          setSelectedScent(recData.recommendedScents[0]);
-        }
+      // 새로운 API 응답 구조에 맞게 mainScent 설정
+      if (recData && recData.mainScent) {
+        setSelectedScent(recData.mainScent);
+        console.log('✅ 메인 향기 설정:', recData.mainScent);
       }
       
       setIsLoading(false);
@@ -110,23 +110,26 @@ function AiScentRecommendationResultContent() {
     return null;
   }
 
-  // 고도화된 구조인지 확인
-  const isAdvanced = isAdvancedRecommendation(recommendation);
+  // 현재 API 응답 구조 확인 (any 타입으로 캐스팅)
+  const recData = recommendation as any;
+  const hasMainScent = recData.mainScent;
+  const hasUsageGuide = recData.usageGuide;
+  const hasAlternatives = recData.alternatives;
   
-  // 향기 목록 추출
-  const scents = recommendation.recommendedScents || [];
+  console.log('🔍 API 응답 구조 확인:', {
+    hasMainScent,
+    hasUsageGuide,
+    hasAlternatives,
+    recommendation
+  });
+
+  // 기존 구조와 호환성 유지를 위한 처리
+  const isAdvanced = false; // 현재는 새로운 단순한 구조 사용
   
-  // 첫 번째 향기가 선택되지 않았다면 설정
-  if (!selectedScent && scents.length > 0) {
-    setSelectedScent(scents[0]);
+  if (!selectedScent && hasMainScent) {
+    console.log('⚠️ 선택된 향기가 없어서 리렌더링 대기');
     return null; // 리렌더링 대기
   }
-
-  // DB에서 선택된 향기의 상세 정보 가져오기
-  const scentDetail = selectedScent ? SCENT_COLLECTIONS.find(s => s.id === selectedScent.id) : null;
-  const relatedPlaces = scentDetail ? HOTPLACE_DESTINATIONS.filter(place => 
-    place.signatureScent.name === scentDetail?.name
-  ) : [];
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-cream via-sand to-latte">
@@ -157,25 +160,138 @@ function AiScentRecommendationResultContent() {
 
       {/* 메인 컨텐츠 */}
       <div className="max-w-7xl mx-auto px-4 py-12">
-        {isAdvanced ? (
-          <AdvancedResultDisplay 
-            recommendation={recommendation as AdvancedAIRecommendation}
-            selectedScent={selectedScent}
-            setSelectedScent={setSelectedScent}
-            activeTab={activeTab}
-            setActiveTab={setActiveTab}
-          />
-        ) : (
-          <LegacyResultDisplay 
-            recommendation={recommendation as LegacyAIRecommendation}
-            selectedScent={selectedScent}
-            setSelectedScent={setSelectedScent}
-            activeTab={activeTab}
-            setActiveTab={setActiveTab}
-            scentDetail={scentDetail}
-            relatedPlaces={relatedPlaces}
-          />
-        )}
+        <NewApiResultDisplay 
+          recommendation={recommendation}
+          selectedScent={selectedScent}
+          setSelectedScent={setSelectedScent}
+          activeTab={activeTab}
+          setActiveTab={setActiveTab}
+        />
+      </div>
+    </div>
+  );
+}
+
+// 새로운 API 구조를 위한 결과 표시 컴포넌트
+function NewApiResultDisplay({
+  recommendation,
+  selectedScent,
+  setSelectedScent,
+  activeTab,
+  setActiveTab
+}: {
+  recommendation: any;
+  selectedScent: any;
+  setSelectedScent: (scent: any) => void;
+  activeTab: string;
+  setActiveTab: (tab: 'overview' | 'details' | 'places' | 'analysis' | 'strategy' | 'visual' | 'insights') => void;
+}) {
+  if (!selectedScent) return null;
+
+  return (
+    <div className="space-y-8">
+      {/* 메인 향기 카드 */}
+      <div className="bg-white/90 backdrop-blur-md rounded-3xl p-8 shadow-xl">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+          {/* 향기 정보 */}
+          <div>
+            <h2 className="text-3xl font-bold text-charcoal mb-4">
+              {selectedScent.name}
+            </h2>
+            <p className="text-lg text-charcoal/80 mb-6">
+              {selectedScent.description}
+            </p>
+            
+            {/* 향료 노트 */}
+            {selectedScent.notes && selectedScent.notes.length > 0 && (
+              <div className="mb-6">
+                <h3 className="text-lg font-semibold text-charcoal mb-3">향료 구성</h3>
+                <div className="flex flex-wrap gap-2">
+                  {selectedScent.notes.map((note: string, index: number) => (
+                    <span
+                      key={index}
+                      className="px-3 py-1 bg-sage/10 text-sage rounded-full text-sm"
+                    >
+                      {note}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* 적합성 설명 */}
+            {selectedScent.suitability && (
+              <div>
+                <h3 className="text-lg font-semibold text-charcoal mb-3">적합성 분석</h3>
+                <p className="text-charcoal/70">{selectedScent.suitability}</p>
+              </div>
+            )}
+          </div>
+
+          {/* 사용 가이드 */}
+          <div>
+            {(recommendation as any).usageGuide && (
+              <div className="bg-sage/5 rounded-2xl p-6">
+                <h3 className="text-xl font-semibold text-charcoal mb-4">사용 가이드</h3>
+                
+                {(recommendation as any).usageGuide.placement && (
+                  <div className="mb-4">
+                    <h4 className="font-medium text-charcoal mb-2">💡 권장 배치</h4>
+                    <p className="text-charcoal/70">{(recommendation as any).usageGuide.placement}</p>
+                  </div>
+                )}
+
+                {(recommendation as any).usageGuide.intensity && (
+                  <div className="mb-4">
+                    <h4 className="font-medium text-charcoal mb-2">🎛️ 강도 조절</h4>
+                    <p className="text-charcoal/70">{(recommendation as any).usageGuide.intensity}</p>
+                  </div>
+                )}
+
+                {(recommendation as any).usageGuide.timing && (
+                  <div>
+                    <h4 className="font-medium text-charcoal mb-2">⏰사용 타이밍</h4>
+                    <p className="text-charcoal/70">{(recommendation as any).usageGuide.timing}</p>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* 대안 향기들 */}
+      {(recommendation as any).alternatives && (recommendation as any).alternatives.length > 0 && (
+        <div className="bg-white/90 backdrop-blur-md rounded-3xl p-8 shadow-xl">
+          <h3 className="text-2xl font-bold text-charcoal mb-6">대안 향기 추천</h3>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {(recommendation as any).alternatives.map((alt: any, index: number) => (
+              <div 
+                key={index}
+                className="p-6 bg-gradient-to-br from-sand/20 to-latte/20 rounded-2xl border border-sage/20"
+              >
+                <h4 className="text-lg font-semibold text-charcoal mb-3">{alt.name}</h4>
+                <p className="text-charcoal/70">{alt.description}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* 구매 링크 */}
+      <div className="text-center space-y-4">
+        <Link
+          href="/scent-map"
+          className="inline-flex items-center px-8 py-4 bg-sage text-white rounded-full hover:bg-sage/90 transition-all duration-300 text-lg font-semibold shadow-lg"
+        >
+          🗺️ 향기 지도에서 상품 보기
+          <svg className="ml-2 w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
+          </svg>
+        </Link>
+        <p className="text-charcoal/60">
+          추천받은 향기와 비슷한 상품들을 향기 지도에서 찾아보세요
+        </p>
       </div>
     </div>
   );

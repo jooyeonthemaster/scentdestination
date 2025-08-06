@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useAuth } from '@/contexts/AuthContext';
@@ -51,13 +51,20 @@ export default function LoginPage() {
   // 구글 로그인
   const handleGoogleSignIn = async () => {
     try {
+      console.log('🔐 Google 로그인 버튼 클릭');
       setError('');
-      await signInWithGoogle();
+      
+      const result = await signInWithGoogle();
+      console.log('✅ Google 로그인 성공:', result);
+      
       router.push('/'); // 로그인 성공 시 홈으로 이동
     } catch (err: any) {
-      setError(err.message);
+      console.error('❌ Google 로그인 에러:', err);
+      setError(err.message || '로그인 중 오류가 발생했습니다.');
     }
   };
+
+
 
   // 로딩 중일 때 표시
   if (loading) {

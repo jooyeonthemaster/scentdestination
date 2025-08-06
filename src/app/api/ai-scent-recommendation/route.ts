@@ -38,7 +38,13 @@ async function createAdvancedRecommendationPrompt() {
     // 실제 파이어베이스 데이터 가져오기
     const hotplaces = await hotplaceService.getAll();
     
-    console.log('✅ 파이어베이스 데이터 로드 성공:', hotplaces.length, '개');
+    console.log('✅ 파이어베이스 데이터 로드 성공:', hotplaces?.length || 0, '개');
+    
+    // 데이터가 없을 경우 기본값 사용
+    if (!hotplaces || hotplaces.length === 0) {
+      console.warn('⚠️ 파이어베이스에서 데이터를 가져오지 못했습니다. 기본 데이터를 사용합니다.');
+      // 기본 향기 데이터를 여기에 추가할 수 있습니다
+    }
     
     return `
 당신은 세계적 수준의 후각 전문가이자 공간 향기 컨설턴트입니다. 15년간 럭셔리 브랜드와 고급 호텔의 향기 전략을 담당해온 전문가로서, 심리학, 신경과학, 마케팅학을 바탕으로 과학적이고 전략적인 향기 추천을 제공합니다.
@@ -283,10 +289,15 @@ ${JSON.stringify(hotplaces, null, 1)}
 
 export async function POST(request: NextRequest) {
   try {
+    console.log('🚀 AI 분석 API 호출됨');
+    console.log('📝 GEMINI_API_KEY 존재 여부:', !!process.env.GEMINI_API_KEY);
+    console.log('🤖 GenAI 초기화 상태:', !!genAI);
+    
     // API 키 확인
     if (!genAI) {
+      console.error('❌ Gemini AI 초기화 실패 - API 키:', process.env.GEMINI_API_KEY ? '설정됨' : '미설정');
       return NextResponse.json(
-        { error: 'AI 서비스 구성 오류' },
+        { error: 'AI 서비스 구성 오류 - Gemini API 키를 확인해주세요' },
         { status: 500 }
       );
     }
@@ -301,16 +312,18 @@ export async function POST(request: NextRequest) {
       );
     }
 
-         // 고도화된 분석을 위한 Gemini 2.0 Flash 모델
+         // Gemini 2.0 Flash 모델 사용
      const model = genAI.getGenerativeModel({ 
        model: 'gemini-2.0-flash-exp',
        generationConfig: {
          temperature: 0.3,
          topP: 0.8,
          topK: 20,
-         maxOutputTokens: 8192, // 고도화된 분석을 위해 증가
+         maxOutputTokens: 8192,
        }
      });
+     
+     console.log('✅ Gemini 모델 초기화 성공');
 
     // 간소화된 프롬프트
     const userPrompt = `
@@ -324,284 +337,82 @@ export async function POST(request: NextRequest) {
 위 정보로 최적의 향기를 추천해주세요.
 `;
 
-     // 고도화된 전문가급 프롬프트 생성
-     const advancedPrompt = await createAdvancedRecommendationPrompt();
-     const finalPrompt = advancedPrompt + '\n\n' + userPrompt;
+     // 간단한 향기 추천 프롬프트
+     const simplePrompt = `
+당신은 전문 향기 컨설턴트입니다. 사용자의 공간과 취향에 맞는 향기를 추천해주세요.
 
-         // AI 요청 (이미지 분석 포함)
-     let result;
-     if (body.imageAnalysis) {
-       // 이미지가 있는 경우 이미지와 함께 분석
-       const imagePrompt = `
-사용자가 업로드한 공간 이미지를 분석하고, 위 전문가급 향기 추천에 이 이미지 분석 결과를 통합하세요.
+다음 JSON 형식으로 응답해주세요:
+{
+  "analysisId": "unique_id",
+  "recommendation": {
+    "mainScent": {
+      "name": "추천 향기 이름",
+      "description": "향기 설명",
+      "notes": ["탑노트", "미들노트", "베이스노트"],
+      "suitability": "왜 이 향기가 적합한지 설명"
+    },
+    "usageGuide": {
+      "placement": "어디에 배치할지",
+      "intensity": "강도 조절법",
+      "timing": "언제 사용하면 좋은지"
+    },
+    "alternatives": [
+      {
+        "name": "대안 향기 1",
+        "description": "간단한 설명"
+      }
+    ]
+  }
+}`;
+     
+     const finalPrompt = simplePrompt + '\n\n' + userPrompt;
+     console.log('📝 프롬프트 생성 완료');
 
-이미지 분석 포인트:
-- 색상 분석 (주요 색상, 색온도, 대비, 조화)
-- 스타일 분석 (디자인 스타일, 가구, 장식 요소)
-- 조명 분석 (조명 유형, 밝기, 자연광 여부)
-- 소재 분석 (주요 소재, 질감, 표면 마감)
-- 분위기 점수 (편안함, 세련됨, 활력, 휴식감 각각 1-10점)
-
-업로드된 이미지: ${body.imageAnalysis}
-`;
-       result = await model.generateContent([
-         finalPrompt + '\n\n' + imagePrompt,
-         body.imageAnalysis
-       ]);
-     } else {
-       // 이미지가 없는 경우 텍스트만
-       result = await model.generateContent(finalPrompt);
-     }
+         // AI 요청
+     console.log('🤖 Gemini AI 호출 중...');
+     const result = await model.generateContent(finalPrompt);
+     console.log('✅ Gemini AI 응답 받음');
      
      const response = await result.response;
      const text = response.text();
 
          console.log('🤖 AI 응답:', text);
 
-           // 고도화된 JSON 파싱 및 복구
-      let jsonMatch = text.match(/\{[\s\S]*\}/);
-      if (!jsonMatch) {
-        throw new Error('AI 응답에서 JSON을 찾을 수 없습니다');
-      }
+     // 강화된 JSON 파싱
+     let jsonMatch = text.match(/\{[\s\S]*\}/);
+     if (!jsonMatch) {
+       throw new Error('AI 응답에서 JSON을 찾을 수 없습니다');
+     }
 
-      let recommendation;
-      try {
-        recommendation = JSON.parse(jsonMatch[0]);
-      } catch (parseError) {
-        console.error('❌ JSON 파싱 1차 실패, 고도화된 복구 시도 중...');
-        
-                 let jsonString = jsonMatch[0];
-        
-        // 1. 잘린 JSON 복구 전략
-        console.log('🔧 JSON 길이:', jsonString.length);
-        
-        // 2. 불완전한 JSON을 단계적으로 복구
-        try {
-          // 마지막 완전한 객체까지만 추출
-          const openBraces = (jsonString.match(/\{/g) || []).length;
-          const closeBraces = (jsonString.match(/\}/g) || []).length;
-          const needClosing = openBraces - closeBraces;
-          
-          console.log(`🔧 열린 브레이스: ${openBraces}, 닫힌 브레이스: ${closeBraces}, 필요한 닫기: ${needClosing}`);
-          
-          // 마지막 불완전한 부분 제거
-          let cleanedJson = jsonString;
-          
-          // 마지막 쉼표 이후 불완전한 부분 제거
-          const lastCommaIndex = cleanedJson.lastIndexOf(',');
-          const lastCompleteCloseBrace = cleanedJson.lastIndexOf('}');
-          
-          if (lastCommaIndex > lastCompleteCloseBrace) {
-            // 마지막 쉼표 이후 모든 내용 제거
-            cleanedJson = cleanedJson.substring(0, lastCommaIndex);
-          }
-          
-          // 필요한 만큼 닫는 브레이스 추가
-          for (let i = 0; i < needClosing; i++) {
-            cleanedJson += '\n}';
-          }
-          
-          console.log('🔧 복구된 JSON 길이:', cleanedJson.length);
-          
-          recommendation = JSON.parse(cleanedJson);
-          console.log('✅ 고도화된 JSON 복구 성공!');
-          
-        } catch (advancedError) {
-          console.error('❌ 고도화된 복구도 실패, 간소화된 응답 생성 중...');
-          
-          // 최후의 수단: 간소화된 응답 생성
-          recommendation = {
-            analysisMetadata: {
-              analysisId: `emergency_${Date.now()}`,
-              timestamp: new Date().toISOString(),
-              processingTime: 0,
-              confidenceLevel: 75,
-              dataSourcesUsed: ["firebase_hotplaces", "emergency_fallback"]
-            },
-            userAnalysis: {
-              personalityType: "추출 실패로 인한 기본값",
-              lifestyleCategory: "분석 중",
-              scentPreferenceProfile: {
-                dominantFamily: "Woody",
-                secondaryFamily: "Fresh",
-                intensityPreference: "medium",
-                seasonalAffinity: ["가을", "겨울"]
-              },
-              psychologicalDrivers: ["편안함", "집중력"],
-              brandAffinityLevel: "moderate"
-            },
-            spaceAnalysis: {
-              colorAnalysis: {
-                dominantColors: ["베이지", "브라운"],
-                colorTemperature: "warm",
-                contrastLevel: "medium",
-                colorHarmony: "조화로운 톤"
-              },
-              styleAnalysis: {
-                designStyle: "현대적",
-                furnitureStyle: "미니멀",
-                decorativeElements: ["식물", "조명"],
-                spatialLayout: "개방적"
-              },
-              lightingAnalysis: {
-                lightingType: "자연광",
-                brightness: "moderate",
-                naturalLight: true,
-                ambientMood: "편안함"
-              },
-              materialAnalysis: {
-                primaryMaterials: ["목재", "패브릭"],
-                textureVariety: ["부드러움", "자연스러움"],
-                surfaceFinishes: ["매트", "새틴"]
-              },
-              atmosphereScore: {
-                cozyness: 8,
-                sophistication: 7,
-                energy: 6,
-                relaxation: 9
-              }
-            },
-            recommendedScents: [
-              {
-                id: "fallback-scent-1",
-                name: "조화로운 향기",
-                suitabilityScore: 85,
-                confidenceLevel: 75,
-                matchAnalysis: {
-                  personalityMatch: 80,
-                  spaceMatch: 85,
-                  lifestyleMatch: 80,
-                  seasonalMatch: 90,
-                  overallReasoning: "AI 응답 복구 실패로 인한 기본 추천입니다. 재분석을 권장합니다."
-                },
-                scentProfile: {
-                  family: "Woody & Fresh",
-                  intensity: 6,
-                  longevity: "3-4시간",
-                  sillage: "중간 확산",
-                  notes: {
-                    top: [{ name: "베르가못", description: "상쾌한 시트러스", percentage: 30 }],
-                    middle: [{ name: "샌달우드", description: "따뜻한 우디", percentage: 40 }],
-                    base: [{ name: "머스크", description: "부드러운 마무리", percentage: 30 }]
-                  }
-                },
-                usageGuide: {
-                  optimalPlacement: ["거실", "침실"],
-                  intensityControl: "디퓨저 리드 개수로 조절",
-                  timingRecommendations: ["오후", "저녁"],
-                  maintenanceTips: ["월 1회 리드 교체"]
-                },
-                relatedPlaces: [],
-                synergyEffects: {
-                  psychologicalBenefits: ["스트레스 완화", "집중력 향상"],
-                  brandingImpact: ["편안한 분위기", "전문성"],
-                  customerExperience: ["만족도 향상", "재방문 유도"]
-                }
-              }
-            ],
-            overallStrategy: {
-              strategicConcept: {
-                mainTheme: "조화로운 공간 연출",
-                subThemes: ["편안함", "자연스러움", "집중"],
-                brandingDirection: "프리미엄 웰빙",
-                targetEmotions: ["편안함", "안정감"]
-              },
-              implementationPlan: {
-                phasedApproach: [
-                  {
-                    phase: 1,
-                    duration: "1주일",
-                    actions: ["향기 디퓨저 설치", "강도 조절"],
-                    expectedOutcomes: ["기본 분위기 조성"]
-                  }
-                ],
-                budgetConsiderations: {
-                  range: "5-15만원",
-                  costFactors: ["디퓨저", "향기 오일"],
-                  valueProposition: "공간 품질 향상"
-                }
-              },
-              performanceMetrics: {
-                measurableOutcomes: ["분위기 개선", "만족도 증가"],
-                timeframe: "1개월",
-                successIndicators: ["긍정적 피드백"]
-              },
-              seasonalAdaptations: {
-                spring: "플로럴 노트 강화",
-                summer: "시트러스 계열 증가",
-                autumn: "우디 베이스 강조",
-                winter: "따뜻한 스파이시 노트"
-              }
-            },
-            visualConcept: {
-              moodboard: {
-                concept: "자연스러운 모던",
-                keyVisualElements: ["목재", "자연광", "그린"],
-                inspirationSources: ["스칸디나비아", "일본 미니멀"]
-              },
-              colorStory: {
-                primaryPalette: [
-                  { hex: "#F5F1EB", name: "크림", emotion: "편안함" },
-                  { hex: "#A8B5A0", name: "세이지", emotion: "자연스러움" }
-                ],
-                secondaryPalette: [
-                  { hex: "#E8DDD4", name: "샌드", usage: "포인트" }
-                ],
-                colorHarmony: "따뜻한 중성 톤",
-                psychologicalImpact: "스트레스 완화"
-              },
-              materialPalette: {
-                primary: [
-                  { name: "목재", texture: "자연스러운", sensoryImpact: "따뜻함" }
-                ],
-                accent: [
-                  { name: "린넨", usage: "소프트 포인트", effect: "편안함" }
-                ]
-              },
-              spatialLayout: {
-                zoning: ["휴식 공간", "작업 공간"],
-                flowPattern: "자연스러운 동선",
-                focusPoints: ["향기 포인트"]
-              }
-            },
-            expertInsights: {
-              trendAnalysis: {
-                currentTrends: ["웰빙 공간", "자연주의"],
-                emergingTrends: ["개인 맞춤화", "지속가능성"],
-                futureProjections: ["AI 기반 향기 조절"]
-              },
-              scientificBasis: {
-                olfactoryScience: ["후각과 감정의 연결"],
-                psychologyPrinciples: ["환경 심리학"],
-                neuroscienceInsights: ["향기와 기억"]
-              },
-              industryBenchmarks: {
-                competitorAnalysis: ["호텔 브랜딩"],
-                bestPractices: ["점진적 도입"],
-                differentiationOpportunities: ["개인화"]
-              },
-              customAdvice: {
-                immediateActions: ["기본 향기 도입"],
-                longTermStrategy: ["계절별 조정"],
-                potentialChallenges: ["개인 취향 차이"],
-                mitigation: ["다양한 옵션 제공"]
-              }
-            },
-            alternativeOptions: {
-              budgetFriendly: [],
-              luxuryUpgrade: [],
-              seasonalVariations: []
-            },
-            actionableChecklist: {
-              immediate: [{ task: "디퓨저 구매", priority: "high" }],
-              shortTerm: [{ task: "향기 강도 조절", timeline: "1주일" }],
-              longTerm: [{ task: "계절별 향기 변경", timeline: "3개월" }]
-            }
-          };
-          
-          console.log('🚨 비상 응답 생성 완료');
-        }
-      }
+     let recommendation;
+     try {
+       recommendation = JSON.parse(jsonMatch[0]);
+            } catch (parseError) {
+         console.error('❌ JSON 파싱 1차 실패, 복구 시도 중...');
+         
+         // JSON이 잘린 경우 복구 시도
+         let jsonString = jsonMatch[0];
+         
+         // 마지막에 잘린 부분 찾기
+         const lastCommaIndex = jsonString.lastIndexOf(',');
+         const lastBraceIndex = jsonString.lastIndexOf('}');
+         
+         if (lastCommaIndex > lastBraceIndex) {
+           // 마지막 콤마 이후를 제거하고 닫는 브레이스 추가
+           jsonString = jsonString.substring(0, lastCommaIndex) + '\n}\n}';
+         } else if (!jsonString.endsWith('}')) {
+           // 닫는 브레이스가 없으면 추가
+           jsonString += '\n}\n}';
+         }
+         
+         try {
+           recommendation = JSON.parse(jsonString);
+           console.log('✅ JSON 복구 성공!');
+         } catch (secondError) {
+           console.error('❌ JSON 복구도 실패:', secondError);
+           throw new Error(`JSON 파싱 실패: ${parseError instanceof Error ? parseError.message : '알 수 없는 오류'}`);
+         }
+       }
     const analysisId = `ai_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
 
     return NextResponse.json({
@@ -612,15 +423,40 @@ export async function POST(request: NextRequest) {
     });
 
   } catch (error) {
-    console.error('🚨 AI 추천 오류:', error);
+    console.error('🚨 AI 추천 API 전체 오류:', error);
+    console.error('🔍 오류 상세:', {
+      name: error instanceof Error ? error.name : 'Unknown',
+      message: error instanceof Error ? error.message : '알 수 없는 오류',
+      stack: error instanceof Error ? error.stack : 'No stack trace'
+    });
     
-    // API 한도 또는 기타 오류 시 500 반환 (프론트엔드에서 fallback 처리)
+    // 특정 오류 유형별 처리
+    let errorMessage = '향기 추천 생성 실패';
+    let statusCode = 500;
+    
+    if (error instanceof Error) {
+      if (error.message.includes('quota') || error.message.includes('limit')) {
+        errorMessage = 'AI 서비스 사용량 한도 초과';
+        statusCode = 429;
+      } else if (error.message.includes('API key') || error.message.includes('authorization')) {
+        errorMessage = 'AI 서비스 인증 오류';
+        statusCode = 401;
+      } else if (error.message.includes('model') || error.message.includes('gemini')) {
+        errorMessage = 'AI 모델 접근 오류';
+        statusCode = 503;
+      } else if (error.message.includes('파이어베이스') || error.message.includes('firebase')) {
+        errorMessage = '데이터베이스 연결 오류';
+        statusCode = 503;
+      }
+    }
+    
     return NextResponse.json(
       { 
-        error: '향기 추천 생성 실패',
-        details: error instanceof Error ? error.message : '알 수 없는 오류'
+        error: errorMessage,
+        details: error instanceof Error ? error.message : '알 수 없는 오류',
+        timestamp: new Date().toISOString()
       },
-      { status: 500 }
+      { status: statusCode }
     );
   }
 } 

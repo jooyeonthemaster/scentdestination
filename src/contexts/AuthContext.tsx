@@ -2,7 +2,7 @@
 
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { User, onAuthStateChanged } from 'firebase/auth';
-import { auth } from '@/lib/firebase';
+import { auth, initializeFirebaseClient } from '@/lib/firebase';
 import { 
   signInWithGoogle, 
   handleGoogleRedirectResult,
@@ -40,9 +40,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
 
-  // 인증 상태 변화 감지
+  // Firebase 초기화 및 인증 상태 감지
   useEffect(() => {
+    // 클라이언트에서만 Firebase 초기화
+    initializeFirebaseClient();
+    
     console.log('🔐 AuthContext: 인증 상태 모니터링 시작');
+    
+    // auth가 초기화되지 않은 경우 대기
+    if (!auth) {
+      console.warn('⚠️ Firebase Auth가 초기화되지 않음 - 잠시 후 재시도');
+      setLoading(false);
+      return;
+    }
     
     // Google 리다이렉트 결과 처리
     const handleRedirectResult = async () => {

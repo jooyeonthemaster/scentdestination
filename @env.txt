@@ -19,7 +19,7 @@ TOSS_PAYMENTS_SECRET_KEY=test_sk_nRQoOaPz8LDvXDvRolYm8y47BMw6
 TOSS_PAYMENTS_SECURITY_KEY=2756b5cbab34aaa5e3e25982c2e3a69207802f7b746ccb02c31ee229be8b0563
 
 # Next.js Configuration
-NEXT_PUBLIC_APP_URL=http://localhost:3000
+NEXT_PUBLIC_APP_URL=http://localhost:3001
 
 # Development Environment
 NODE_ENV=development

@@ -11,7 +11,19 @@ import {
   getRedirectResult
 } from 'firebase/auth';
 import { doc, setDoc, getDoc } from 'firebase/firestore';
-import { auth, googleProvider, db } from './firebase';
+import { auth, googleProvider, db, isFirebaseInitialized, getFirebaseInitializationError } from './firebase';
+
+// Firebase 연결 상태 확인 함수
+const checkFirebaseConnection = () => {
+  if (!isFirebaseInitialized()) {
+    const error = getFirebaseInitializationError();
+    throw new Error(error || 'Firebase가 초기화되지 않았습니다. 페이지를 새로고침해주세요.');
+  }
+  
+  if (!auth) {
+    throw new Error('Firebase Auth 서비스에 연결할 수 없습니다. 네트워크 연결을 확인해주세요.');
+  }
+};
 
 // 사용자 프로필 타입
 export interface UserProfile {
@@ -38,12 +50,40 @@ export interface SignInData {
   password: string;
 }
 
-// Google로 로그인
-export const signInWithGoogle = async (): Promise<void> => {
+// Google로 로그인 (팝업 방식)
+export const signInWithGoogle = async (): Promise<UserCredential> => {
   try {
-    await signInWithRedirect(auth, googleProvider);
+    checkFirebaseConnection();
+    console.log('🔐 Google 로그인 시작 (팝업 방식)');
+    
+    const result = await signInWithPopup(auth, googleProvider);
+    console.log('✅ Google 로그인 성공');
+    
+    // 사용자 프로필을 Firestore에 저장
+    try {
+      await saveUserProfile(result.user);
+      console.log('✅ 사용자 프로필 저장 완료');
+    } catch (saveError: any) {
+      console.warn('⚠️ 사용자 프로필 저장 실패 (로그인은 성공):', saveError);
+      // 프로필 저장 실패해도 로그인은 유지
+    }
+    
+    return result;
   } catch (error: any) {
-    console.error('구글 로그인 실패:', error);
+    console.error('❌ 구글 로그인 실패:', error);
+    
+    // 팝업 차단된 경우 리다이렉트 방식으로 대체
+    if (error.code === 'auth/popup-blocked') {
+      console.log('🔄 팝업이 차단되어 리다이렉트 방식으로 전환');
+      try {
+        await signInWithRedirect(auth, googleProvider);
+        return {} as UserCredential; // 리다이렉트의 경우 결과는 나중에 처리됨
+      } catch (redirectError: any) {
+        console.error('❌ 리다이렉트 로그인도 실패:', redirectError);
+        throw new Error(getAuthErrorMessage(redirectError.code));
+      }
+    }
+    
     throw new Error(getAuthErrorMessage(error.code));
   }
 };
@@ -89,11 +129,16 @@ export const signUpWithEmail = async (signUpData: SignUpData): Promise<UserCrede
 // 이메일로 로그인
 export const signInWithEmail = async (signInData: SignInData): Promise<UserCredential> => {
   try {
+    checkFirebaseConnection();
     const { email, password } = signInData;
     const result = await signInWithEmailAndPassword(auth, email, password);
     
-    // 로그인 시 사용자 정보 업데이트
-    await updateUserProfile(result.user.uid, { updatedAt: new Date() });
+    // 로그인 시 사용자 정보 업데이트 (실패해도 로그인은 유지)
+    try {
+      await updateUserProfile(result.user.uid, { updatedAt: new Date() });
+    } catch (updateError: any) {
+      console.warn('⚠️ 사용자 정보 업데이트 실패 (로그인은 성공):', updateError);
+    }
     
     return result;
   } catch (error: any) {
