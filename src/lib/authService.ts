@@ -106,6 +106,7 @@ export const handleGoogleRedirectResult = async (): Promise<UserCredential | nul
 // 이메일로 회원가입
 export const signUpWithEmail = async (signUpData: SignUpData): Promise<UserCredential> => {
   try {
+    checkFirebaseConnection();
     const { email, password, displayName, phoneNumber } = signUpData;
     
     // Firebase Auth에 사용자 생성
@@ -285,6 +286,8 @@ const getAuthErrorMessage = (errorCode: string): string => {
       return '팝업이 차단되었습니다. 브라우저 설정을 확인해주세요.';
     case 'auth/too-many-requests':
       return '너무 많은 시도로 인해 일시적으로 차단되었습니다. 잠시 후 다시 시도해주세요.';
+    case 'auth/operation-not-allowed':
+      return '이메일/비밀번호 회원가입이 현재 비활성화되어 있습니다. 구글 로그인을 이용해주세요.';
     default:
       return '로그인 중 오류가 발생했습니다. 다시 시도해주세요.';
   }

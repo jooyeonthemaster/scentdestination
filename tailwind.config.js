@@ -21,6 +21,7 @@ module.exports = {
         sage: '#A8B5A0',            // 부드러운 그린 (포인트)
         terracotta: '#C67B5C',      // 따뜻한 테라코타 (버튼)
         warm: '#B8A082',            // 따뜻한 브라운
+        gold: '#D4AF37',            // 골드 (버튼용)
         
         // 기본 컬러
         white: '#FFFFFF',
